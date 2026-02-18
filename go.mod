@@ -1,8 +1,11 @@
 module github.com/local/picobot
 
-go 1.26
+go 1.23
 
-require github.com/spf13/cobra v1.7.0
+require (
+	github.com/spf13/cobra v1.7.0
+	golang.org/x/net v0.17.0
+)
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

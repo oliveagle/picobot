@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/local/picobot/internal/chat"
+	"golang.org/x/net/proxy"
 )
 
 // StartTelegram is a convenience wrapper that uses the real polling implementation
@@ -24,6 +27,55 @@ func StartTelegram(ctx context.Context, hub *chat.Hub, token string, allowFrom [
 	}
 	base := "https://api.telegram.org/bot" + token
 	return StartTelegramWithBase(ctx, hub, token, base, allowFrom)
+}
+
+// createHTTPClient creates an HTTP client with optional SOCKS5 proxy support.
+// Reads TELEGRAM_PROXY environment variable for proxy configuration.
+func createHTTPClient(timeout time.Duration) *http.Client {
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	// Check for SOCKS5 proxy
+	if proxyURL := os.Getenv("TELEGRAM_PROXY"); proxyURL != "" {
+		parsedURL, err := url.Parse(proxyURL)
+		if err == nil && parsedURL.Scheme == "socks5" {
+			var auth *proxy.Auth
+			if parsedURL.User != nil {
+				password, _ := parsedURL.User.Password()
+				auth = &proxy.Auth{
+					User:     parsedURL.User.Username(),
+					Password: password,
+				}
+			}
+			dialer, err := proxy.SOCKS5("tcp", parsedURL.Host, auth, proxy.Direct)
+			if err == nil {
+				transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+					return dialer.Dial(network, addr)
+				}
+				log.Printf("telegram: using SOCKS5 proxy %s", parsedURL.Host)
+			} else {
+				log.Printf("telegram: failed to create SOCKS5 dialer: %v", err)
+			}
+		} else if err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {
+			// HTTP/HTTPS proxy
+			transport.Proxy = http.ProxyURL(parsedURL)
+			log.Printf("telegram: using HTTP proxy %s", parsedURL.Host)
+		} else if err != nil {
+			log.Printf("telegram: invalid proxy URL: %v", err)
+		}
+	}
+
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+	}
 }
 
 // StartTelegramWithBase starts long-polling against the given base URL (e.g., https://api.telegram.org/bot<TOKEN> or a test server URL).
@@ -39,7 +91,7 @@ func StartTelegramWithBase(ctx context.Context, hub *chat.Hub, token, base strin
 		allowed[id] = struct{}{}
 	}
 
-	client := &http.Client{Timeout: 45 * time.Second}
+	client := createHTTPClient(45 * time.Second)
 
 	// inbound polling goroutine
 	go func() {
@@ -117,7 +169,7 @@ func StartTelegramWithBase(ctx context.Context, hub *chat.Hub, token, base strin
 
 	// outbound sender goroutine
 	go func() {
-		client := &http.Client{Timeout: 10 * time.Second}
+		client := createHTTPClient(10 * time.Second)
 		for {
 			select {
 			case <-ctx.Done():

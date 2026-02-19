@@ -170,7 +170,8 @@ func StartTelegramWithBase(ctx context.Context, hub *chat.Hub, token, base strin
 
 	// outbound sender goroutine
 	go func() {
-		client := createHTTPClient(10 * time.Second)
+		// Outbound client needs longer timeout for proxy overhead
+		client := createHTTPClient(30 * time.Second)
 		for {
 			select {
 			case <-ctx.Done():

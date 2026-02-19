@@ -38,7 +38,7 @@ func createHTTPClient(timeout time.Duration) *http.Client {
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
 		TLSHandshakeTimeout:   10 * time.Second,
-		ResponseHeaderTimeout: 30 * time.Second,
+		ResponseHeaderTimeout: 0, // No timeout for long-polling
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
@@ -91,7 +91,8 @@ func StartTelegramWithBase(ctx context.Context, hub *chat.Hub, token, base strin
 		allowed[id] = struct{}{}
 	}
 
-	client := createHTTPClient(45 * time.Second)
+	// Inbound client needs longer timeout for 30s long-polling + proxy overhead
+	client := createHTTPClient(75 * time.Second)
 
 	// inbound polling goroutine
 	go func() {

@@ -22,6 +22,15 @@ type AgentDefaults struct {
 
 type ChannelsConfig struct {
 	Telegram TelegramConfig `json:"telegram"`
+	DingTalk DingTalkConfig `json:"dingtalk"`
+}
+
+type DingTalkConfig struct {
+	Enabled      bool   `json:"enabled"`
+	ClientID     string `json:"clientId"`
+	ClientSecret string `json:"clientSecret"`
+	UnionID      string `json:"unionId"`
+	UserID       string `json:"userId"`
 }
 
 type TelegramConfig struct {

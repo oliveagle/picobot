@@ -87,7 +87,7 @@ func NewRootCmd() *cobra.Command {
 			if maxIter <= 0 {
 				maxIter = 100
 			}
-			ag := agent.NewAgentLoop(hub, provider, model, maxIter, cfg.Agents.Defaults.Workspace, nil)
+			ag := agent.NewAgentLoop(hub, provider, model, maxIter, cfg.Agents.Defaults.Workspace, nil, &cfg)
 
 			resp, err := ag.ProcessDirect(msg, 60*time.Second)
 			if err != nil {
@@ -134,7 +134,7 @@ func NewRootCmd() *cobra.Command {
 			if maxIter <= 0 {
 				maxIter = 100
 			}
-			ag := agent.NewAgentLoop(hub, provider, model, maxIter, cfg.Agents.Defaults.Workspace, scheduler)
+			ag := agent.NewAgentLoop(hub, provider, model, maxIter, cfg.Agents.Defaults.Workspace, scheduler, &cfg)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 

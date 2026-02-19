@@ -11,6 +11,7 @@ import (
 	"github.com/local/picobot/internal/agent/memory"
 	"github.com/local/picobot/internal/agent/tools"
 	"github.com/local/picobot/internal/chat"
+	"github.com/local/picobot/internal/config"
 	"github.com/local/picobot/internal/cron"
 	"github.com/local/picobot/internal/providers"
 	"github.com/local/picobot/internal/session"
@@ -29,10 +30,11 @@ type AgentLoop struct {
 	model         string
 	maxIterations int
 	running       bool
+	dingTalkTool  *tools.DingTalkTool
 }
 
 // NewAgentLoop creates a new AgentLoop with the given provider.
-func NewAgentLoop(b *chat.Hub, provider providers.LLMProvider, model string, maxIterations int, workspace string, scheduler *cron.Scheduler) *AgentLoop {
+func NewAgentLoop(b *chat.Hub, provider providers.LLMProvider, model string, maxIterations int, workspace string, scheduler *cron.Scheduler, cfg *config.Config) *AgentLoop {
 	if model == "" {
 		model = provider.GetDefaultModel()
 	}
@@ -75,7 +77,23 @@ func NewAgentLoop(b *chat.Hub, provider providers.LLMProvider, model string, max
 	reg.Register(tools.NewReadSkillTool(skillMgr))
 	reg.Register(tools.NewDeleteSkillTool(skillMgr))
 
-	return &AgentLoop{hub: b, provider: provider, tools: reg, sessions: sm, context: ctx, memory: mem, model: model, maxIterations: maxIterations}
+	// register DingTalk tool if configured
+	var dingTalkTool *tools.DingTalkTool
+	if cfg != nil && cfg.Channels.DingTalk.Enabled {
+		dt := tools.NewDingTalkTool(
+			cfg.Channels.DingTalk.ClientID,
+			cfg.Channels.DingTalk.ClientSecret,
+			cfg.Channels.DingTalk.UnionID,
+			cfg.Channels.DingTalk.UserID,
+		)
+		if dt != nil {
+			reg.Register(dt)
+			dingTalkTool = dt
+			log.Println("DingTalk tool registered")
+		}
+	}
+
+	return &AgentLoop{hub: b, provider: provider, tools: reg, sessions: sm, context: ctx, memory: mem, model: model, maxIterations: maxIterations, dingTalkTool: dingTalkTool}
 }
 
 // Run starts processing inbound messages. This is a blocking call until context is canceled.

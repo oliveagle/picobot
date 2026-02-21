@@ -1,0 +1,33 @@
+2026/02/21 15:26:15 DingTalk tool registered
+2026/02/21 15:26:15 DingTalk config: enabled=true, clientID=ding5jz8me9fmfbumhya
+2026/02/21 15:26:15 Starting DingTalk stream...
+2026/02/21 15:26:15 Agent loop started
+2026/02/21 15:26:15 cron: scheduler started
+2026/02/21 15:26:15 [dingtalk] Starting with config: clientID=ding5jz8me9fmfbumhya, robotCode=, dmPolicy=open, groupPolicy=open
+[dingtalk-conn] 2026/02/21 15:26:15 [default] Starting DingTalk Stream client with robust connection...
+2026/02/21 15:26:15 heartbeat: started (every 1m0s)
+2026/02/21 15:26:15 [dingtalk] Connection state: CONNECTING
+[dingtalk-conn] 2026/02/21 15:26:15 [default] Connection attempt 1/10...
+2026/02/21 15:26:15 dingtalk-stream: outbound handler started
+2026/02/21 15:26:15 [dingtalk-sdk] [wire] [http] local => remote:
+POST /v1.0/gateway/connections/open HTTP/1.1
+Host: api.dingtalk.com
+Content-Type: application/json
+Accept: application/json
+
+{"clientId":"ding5jz8me9fmfbumhya","clientSecret":"CsBHg0EpDwZF45gaWD7naOAbvkVEwuBoLUj9D7IQK39E1GSSZ2UiZ6ALKHlbqS0Z","subscriptions":[{"type":"SYSTEM","topic":"disconnect"},{"type":"SYSTEM","topic":"ping"},{"type":"CALLBACK","topic":"/v1.0/im/bot/messages/get"},{"type":"EVENT","topic":"*"}],"ua":"dingtalk-sdk-go/v0.9.1","localIp":"192.168.1.219","extras":{"agentId":"1443416165-1014146569","corpId":"iiCrReEc7v23IJ7A14TzZOAiEiE"}}
+2026/02/21 15:26:16 [dingtalk-sdk] [wire] [http] remote => localhost:
+HTTP/2.0 200 OK
+Server: Tengine
+Date: Sat, 21 Feb 2026 07:26:16 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Access-Control-Allow-Headers: X-Requested-With, X-Sequence, _aop_secret, _aop_signature, x-acs-dingtalk-access-token
+Content-Type: application/json;charset=utf-8
+X-Acs-Request-Id: 7C68A355-9D04-7167-948E-997B760BC6DD
+X-Acs-Trace-Id: 7835b36386c0d3605cb36cc995ae3cb1
+
+{"endpoint":"wss://wss-open-connection.dingtalk.com:443/connect","ticket":"9b9905a2-0ef6-11f1-884b-5a20030ba585"}
+2026/02/21 15:26:16 [dingtalk-sdk] connect success, sessionId=[9b9905a2-0ef6-11f1-884b-5a20030ba585]
+2026/02/21 15:26:16 [dingtalk] Connection state: CONNECTED
+[dingtalk-conn] 2026/02/21 15:26:16 [default] DingTalk Stream client connected successfully

@@ -338,9 +338,18 @@ func (d *DingTalkStreamClient) getAccessToken(ctx context.Context) (string, erro
 	}
 
 	// Fetch new token
-	url := fmt.Sprintf("https://api.dingtalk.com/v1.0/oauth2/accessToken?appKey=%s&appSecret=%s",
-		d.config.ClientID, d.config.ClientSecret)
-	resp, err := d.httpClient.Get(url)
+	url := "https://api.dingtalk.com/v1.0/oauth2/accessToken"
+	body := map[string]string{
+		"appKey":    d.config.ClientID,
+		"appSecret": d.config.ClientSecret,
+	}
+	bodyBytes, _ := json.Marshal(body)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return "", fmt.Errorf("create token request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("token request failed: %w", err)
 	}

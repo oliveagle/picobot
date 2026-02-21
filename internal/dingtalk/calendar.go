@@ -8,14 +8,14 @@ import (
 
 // CalendarEvent represents a DingTalk calendar event
 type CalendarEvent struct {
-	EventID     string              `json:"eventId,omitempty"`
-	Summary     string              `json:"summary"`
-	Description string              `json:"description,omitempty"`
-	Start       CalendarTime        `json:"start"`
-	End         CalendarTime        `json:"end"`
-	Location    *CalendarLocation   `json:"location,omitempty"`
-	Reminders   []CalendarReminder  `json:"reminders,omitempty"`
-	Visibility  string              `json:"visibility,omitempty"`
+	EventID     string             `json:"eventId,omitempty"`
+	Summary     string             `json:"summary"`
+	Description string             `json:"description,omitempty"`
+	Start       CalendarTime       `json:"start"`
+	End         CalendarTime       `json:"end"`
+	Location    *CalendarLocation  `json:"location,omitempty"`
+	Reminders   []CalendarReminder `json:"reminders,omitempty"`
+	Visibility  string             `json:"visibility,omitempty"`
 }
 
 // CalendarTime represents event time

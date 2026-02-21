@@ -14,13 +14,13 @@ import (
 
 // DingTalkMessage represents a message from DingTalk
 type DingTalkMessage struct {
-	MsgType    string `json:"msgtype"`
-	Text       struct {
+	MsgType string `json:"msgtype"`
+	Text    struct {
 		Content string `json:"content"`
 	} `json:"text"`
-	SenderStaffID string `json:"senderStaffId"`
+	SenderStaffID  string `json:"senderStaffId"`
 	ConversationID string `json:"conversationId"`
-	RobotCode     string `json:"robotCode"`
+	RobotCode      string `json:"robotCode"`
 }
 
 // DingTalkResponse represents the response to DingTalk

@@ -33,7 +33,7 @@ type ListTemplatesResponse struct {
 
 // CreateReportResponse represents the response from creating a report
 type CreateReportResponse struct {
-	Result string `json:"result"` // Report ID
+	Result  string `json:"result"` // Report ID
 	ErrCode int    `json:"errcode"`
 	ErrMsg  string `json:"errmsg"`
 }

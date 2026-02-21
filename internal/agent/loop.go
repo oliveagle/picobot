@@ -2,10 +2,14 @@ package agent
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/local/picobot/internal/agent/memory"
@@ -17,7 +21,21 @@ import (
 	"github.com/local/picobot/internal/session"
 )
 
+// ToolExecutionResult holds the result of a tool execution with error info.
+type ToolExecutionResult struct {
+	Content string
+	Err     error
+}
+
 var rememberRE = regexp.MustCompile(`(?i)^remember(?:\s+to)?\s+(.+)$`)
+
+// shortHash generates a short hash from the message content for identification
+func shortHash(content string) string {
+	h := sha256.New()
+	h.Write([]byte(content))
+	hash := hex.EncodeToString(h.Sum(nil))
+	return hash[:8] // return first 8 characters
+}
 
 // AgentLoop is the core processing loop; it holds an LLM provider, tools, sessions and context builder.
 type AgentLoop struct {
@@ -31,15 +49,40 @@ type AgentLoop struct {
 	maxIterations int
 	running       bool
 	dingTalkTool  *tools.DingTalkTool
+
+	// Concurrency control
+	maxConcurrency int
+	semaphore      chan struct{}
+	wg             sync.WaitGroup
+}
+
+// AgentLoopConfig holds configuration for AgentLoop.
+type AgentLoopConfig struct {
+	MaxConcurrency int // Maximum concurrent message processing (default: 10)
+}
+
+// DefaultAgentLoopConfig returns a config with sensible defaults.
+func DefaultAgentLoopConfig() AgentLoopConfig {
+	return AgentLoopConfig{
+		MaxConcurrency: 10,
+	}
 }
 
 // NewAgentLoop creates a new AgentLoop with the given provider.
 func NewAgentLoop(b *chat.Hub, provider providers.LLMProvider, model string, maxIterations int, workspace string, scheduler *cron.Scheduler, cfg *config.Config) *AgentLoop {
+	return NewAgentLoopWithConfig(b, provider, model, maxIterations, workspace, scheduler, cfg, DefaultAgentLoopConfig())
+}
+
+// NewAgentLoopWithConfig creates a new AgentLoop with custom configuration.
+func NewAgentLoopWithConfig(b *chat.Hub, provider providers.LLMProvider, model string, maxIterations int, workspace string, scheduler *cron.Scheduler, cfg *config.Config, config AgentLoopConfig) *AgentLoop {
 	if model == "" {
 		model = provider.GetDefaultModel()
 	}
 	if workspace == "" {
 		workspace = "."
+	}
+	if config.MaxConcurrency <= 0 {
+		config.MaxConcurrency = 10
 	}
 	reg := tools.NewRegistry()
 	// register default tools
@@ -93,13 +136,32 @@ func NewAgentLoop(b *chat.Hub, provider providers.LLMProvider, model string, max
 		}
 	}
 
-	return &AgentLoop{hub: b, provider: provider, tools: reg, sessions: sm, context: ctx, memory: mem, model: model, maxIterations: maxIterations, dingTalkTool: dingTalkTool}
+	return &AgentLoop{
+		hub:            b,
+		provider:       provider,
+		tools:          reg,
+		sessions:       sm,
+		context:        ctx,
+		memory:         mem,
+		model:          model,
+		maxIterations:  maxIterations,
+		dingTalkTool:   dingTalkTool,
+		maxConcurrency: config.MaxConcurrency,
+		semaphore:      make(chan struct{}, config.MaxConcurrency),
+	}
 }
 
 // Run starts processing inbound messages. This is a blocking call until context is canceled.
 func (a *AgentLoop) Run(ctx context.Context) {
 	a.running = true
 	log.Println("Agent loop started")
+
+	// Ensure all goroutines complete on exit
+	defer func() {
+		log.Println("Waiting for pending message processing to complete...")
+		a.wg.Wait()
+		log.Println("Agent loop stopped")
+	}()
 
 	for a.running {
 		select {
@@ -116,102 +178,170 @@ func (a *AgentLoop) Run(ctx context.Context) {
 
 			log.Printf("Processing message from %s:%s\n", msg.Channel, msg.SenderID)
 
-			// Quick heuristic: if user asks the agent to remember something explicitly,
-			// store it in today's note and reply immediately without calling the LLM.
-			trimmed := strings.TrimSpace(msg.Content)
-			rememberRe := rememberRE
-			if matches := rememberRe.FindStringSubmatch(trimmed); len(matches) == 2 {
-				note := matches[1]
-				if err := a.memory.AppendToday(note); err != nil {
-					log.Printf("error appending to memory: %v", err)
-				}
-				out := chat.Outbound{Channel: msg.Channel, ChatID: msg.ChatID, Content: "OK, I've remembered that."}
+			// Send immediate acknowledgment (except for heartbeat/cron)
+			if msg.Channel != "heartbeat" && msg.SenderID != "heartbeat" && msg.SenderID != "cron" {
+				msgHash := shortHash(msg.Content + msg.Timestamp.Format(time.RFC3339Nano))
+				ackContent := fmt.Sprintf("✅ [ID:%s] Message received, thinking...", msgHash)
+				ack := chat.Outbound{Channel: msg.Channel, ChatID: msg.ChatID, Content: ackContent}
 				select {
-				case a.hub.Out <- out:
+				case a.hub.Out <- ack:
+					log.Printf("Sent ack to %s:%s with hash %s", msg.Channel, msg.ChatID, msgHash)
 				default:
-					log.Println("Outbound channel full, dropping message")
-				}
-				// save to session as well
-				session := a.sessions.GetOrCreate(msg.Channel + ":" + msg.ChatID)
-				session.AddMessage("user", msg.Content)
-				session.AddMessage("assistant", "OK, I've remembered that.")
-				a.sessions.Save(session)
-				continue
-			}
-
-			// Set tool context (so message tool knows channel+chat)
-			if mt := a.tools.Get("message"); mt != nil {
-				if mtool, ok := mt.(interface{ SetContext(string, string) }); ok {
-					mtool.SetContext(msg.Channel, msg.ChatID)
-				}
-			}
-			if ct := a.tools.Get("cron"); ct != nil {
-				if ctool, ok := ct.(interface{ SetContext(string, string) }); ok {
-					ctool.SetContext(msg.Channel, msg.ChatID)
+					log.Println("Outbound channel full, dropping ack")
 				}
 			}
 
-			// Build messages from session, long-term memory, and recent memory
-			session := a.sessions.GetOrCreate(msg.Channel + ":" + msg.ChatID)
-			// get file-backed memory context (long-term + today)
-			memCtx, _ := a.memory.GetMemoryContext()
-			memories := a.memory.Recent(5)
-			messages := a.context.BuildMessages(session.GetHistory(), msg.Content, msg.Channel, msg.ChatID, memCtx, memories)
+			// Acquire semaphore (blocks if max concurrency reached)
+			a.semaphore <- struct{}{}
 
-			iteration := 0
-			finalContent := ""
-			lastToolResult := ""
-			toolDefs := a.tools.Definitions()
-			for iteration < a.maxIterations {
-				iteration++
-				resp, err := a.provider.Chat(ctx, messages, toolDefs, a.model)
-				if err != nil {
-					log.Printf("provider error: %v", err)
-					finalContent = "Sorry, I encountered an error while processing your request."
-					break
-				}
-
-				if resp.HasToolCalls {
-					// append assistant message with tool_calls attached
-					messages = append(messages, providers.Message{Role: "assistant", Content: resp.Content, ToolCalls: resp.ToolCalls})
-					// Execute each tool call and return results with "tool" role
-					for _, tc := range resp.ToolCalls {
-						res, err := a.tools.Execute(ctx, tc.Name, tc.Arguments)
-						if err != nil {
-							res = "(tool error) " + err.Error()
-						}
-						lastToolResult = res
-						messages = append(messages, providers.Message{Role: "tool", Content: res, ToolCallID: tc.ID})
-					}
-					// loop again
-					continue
-				} else {
-					finalContent = resp.Content
-					break
-				}
-			}
-
-			if finalContent == "" && lastToolResult != "" {
-				finalContent = lastToolResult
-			} else if finalContent == "" {
-				finalContent = "I've completed processing but have no response to give."
-			}
-
-			// Save session
-			session.AddMessage("user", msg.Content)
-			session.AddMessage("assistant", finalContent)
-			a.sessions.Save(session)
-
-			out := chat.Outbound{Channel: msg.Channel, ChatID: msg.ChatID, Content: finalContent}
-			select {
-			case a.hub.Out <- out:
-			default:
-				log.Println("Outbound channel full, dropping message")
-			}
-		default:
-			// idle tick
-			time.Sleep(100 * time.Millisecond)
+			// Process message in a goroutine to avoid blocking other messages
+			a.wg.Add(1)
+			go func() {
+				defer func() { <-a.semaphore }() // Release semaphore
+				defer a.wg.Done()
+				a.processMessage(ctx, msg)
+			}()
 		}
+	}
+}
+
+// WaitForCompletion waits for all in-flight message processing to complete.
+// Call this after Run() returns to ensure graceful shutdown.
+func (a *AgentLoop) WaitForCompletion() {
+	a.wg.Wait()
+}
+
+// processMessage handles a single message (called in a goroutine)
+func (a *AgentLoop) processMessage(ctx context.Context, msg chat.Inbound) {
+	// Quick heuristic: if user asks the agent to remember something explicitly,
+	// store it in today's note and reply immediately without calling the LLM.
+	trimmed := strings.TrimSpace(msg.Content)
+	if matches := rememberRE.FindStringSubmatch(trimmed); len(matches) == 2 {
+		a.handleRememberCommand(msg, matches[1])
+		return
+	}
+
+	// Skip LLM for heartbeat/cron messages
+	if msg.Channel == "heartbeat" || msg.SenderID == "heartbeat" || msg.SenderID == "cron" {
+		log.Printf("[%s] message received, skipping LLM processing", msg.Channel)
+		return
+	}
+
+	// Set tool context (so message tool knows channel+chat)
+	a.setToolContext(msg.Channel, msg.ChatID)
+
+	// Build messages from session, long-term memory, and recent memory
+	session := a.sessions.GetOrCreate(msg.Channel + ":" + msg.ChatID)
+	memCtx, _ := a.memory.GetMemoryContext()
+	memories := a.memory.Recent(5)
+	messages := a.context.BuildMessages(session.GetHistory(), msg.Content, msg.Channel, msg.ChatID, memCtx, memories)
+
+	// Execute tool calling loop
+	finalContent, _ := a.executeToolLoop(ctx, messages)
+
+	// Fallback responses
+	if finalContent == "" {
+		finalContent = "I've completed processing but have no response to give."
+	}
+
+	// Save session
+	session.AddMessage("user", msg.Content)
+	session.AddMessage("assistant", finalContent)
+	a.sessions.Save(session)
+
+	// Send response
+	a.sendResponse(msg.Channel, msg.ChatID, finalContent)
+}
+
+// handleRememberCommand handles the "remember to X" command
+func (a *AgentLoop) handleRememberCommand(msg chat.Inbound, note string) {
+	if err := a.memory.AppendToday(note); err != nil {
+		log.Printf("error appending to memory: %v", err)
+	}
+
+	response := "OK, I've remembered that."
+	a.sendResponse(msg.Channel, msg.ChatID, response)
+
+	// Save to session as well
+	session := a.sessions.GetOrCreate(msg.Channel + ":" + msg.ChatID)
+	session.AddMessage("user", msg.Content)
+	session.AddMessage("assistant", response)
+	a.sessions.Save(session)
+}
+
+// setToolContext sets the context for message and cron tools
+func (a *AgentLoop) setToolContext(channel, chatID string) {
+	if mt := a.tools.Get("message"); mt != nil {
+		if mtool, ok := mt.(interface{ SetContext(string, string) }); ok {
+			mtool.SetContext(channel, chatID)
+		}
+	}
+	if ct := a.tools.Get("cron"); ct != nil {
+		if ctool, ok := ct.(interface{ SetContext(string, string) }); ok {
+			ctool.SetContext(channel, chatID)
+		}
+	}
+}
+
+// executeToolLoop runs the tool calling iteration loop
+// Returns final content and any error
+func (a *AgentLoop) executeToolLoop(ctx context.Context, messages []providers.Message) (string, error) {
+	var lastToolResult string
+	toolDefs := a.tools.Definitions()
+
+	for iteration := 0; iteration < a.maxIterations; iteration++ {
+		resp, err := a.provider.Chat(ctx, messages, toolDefs, a.model)
+		if err != nil {
+			log.Printf("provider error: %v", err)
+			return "Sorry, I encountered an error while processing your request.", err
+		}
+
+		if resp.HasToolCalls {
+			// Append assistant message with tool_calls
+			messages = append(messages, providers.Message{Role: "assistant", Content: resp.Content, ToolCalls: resp.ToolCalls})
+
+			// Execute each tool call
+			for _, tc := range resp.ToolCalls {
+				result, err := a.executeTool(ctx, tc)
+				lastToolResult = result
+				messages = append(messages, providers.Message{Role: "tool", Content: result, ToolCallID: tc.ID})
+				if err != nil {
+					log.Printf("tool %s execution error: %v", tc.Name, err)
+				}
+			}
+			// Continue to next iteration
+			continue
+		}
+
+		// No tool calls, return final content
+		if resp.Content != "" {
+			return resp.Content, nil
+		}
+		if lastToolResult != "" {
+			return lastToolResult, nil
+		}
+		return resp.Content, nil
+	}
+
+	return "", fmt.Errorf("max iterations (%d) reached", a.maxIterations)
+}
+
+// executeTool executes a single tool call with error handling
+func (a *AgentLoop) executeTool(ctx context.Context, tc providers.ToolCall) (string, error) {
+	result, err := a.tools.Execute(ctx, tc.Name, tc.Arguments)
+	if err != nil {
+		return fmt.Sprintf("tool error: %v", err), err
+	}
+	return result, nil
+}
+
+// sendResponse sends a response to the outbound channel
+func (a *AgentLoop) sendResponse(channel, chatID, content string) {
+	out := chat.Outbound{Channel: channel, ChatID: chatID, Content: content}
+	select {
+	case a.hub.Out <- out:
+	default:
+		log.Println("Outbound channel full, dropping message")
 	}
 }
 

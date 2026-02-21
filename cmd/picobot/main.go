@@ -158,6 +158,32 @@ func NewRootCmd() *cobra.Command {
 				}
 			}
 
+			// start dingtalk stream if configured
+			log.Printf("DingTalk config: enabled=%v, clientID=%s", cfg.Channels.DingTalk.Enabled, cfg.Channels.DingTalk.ClientID)
+			if cfg.Channels.DingTalk.Enabled {
+				log.Println("Starting DingTalk stream...")
+				streamConfig := channels.DefaultDingTalkStreamConfig()
+				streamConfig.ClientID = cfg.Channels.DingTalk.ClientID
+				streamConfig.ClientSecret = cfg.Channels.DingTalk.ClientSecret
+				streamConfig.RobotCode = cfg.Channels.DingTalk.RobotCode
+				streamConfig.CorpID = cfg.Channels.DingTalk.CorpID
+				streamConfig.AgentID = cfg.Channels.DingTalk.AgentID
+				streamConfig.DMPolicy = cfg.Channels.DingTalk.DMPolicy
+				streamConfig.GroupPolicy = cfg.Channels.DingTalk.GroupPolicy
+				streamConfig.AllowFrom = cfg.Channels.DingTalk.AllowFrom
+				streamConfig.MessageType = cfg.Channels.DingTalk.MessageType
+				streamConfig.CardTemplateID = cfg.Channels.DingTalk.CardTemplateID
+				streamConfig.CardTemplateKey = cfg.Channels.DingTalk.CardTemplateKey
+				streamConfig.MaxConnectionAttempts = cfg.Channels.DingTalk.MaxConnectionAttempts
+				streamConfig.InitialReconnectDelay = cfg.Channels.DingTalk.InitialReconnectDelay
+				streamConfig.MaxReconnectDelay = cfg.Channels.DingTalk.MaxReconnectDelay
+				streamConfig.ReconnectJitter = cfg.Channels.DingTalk.ReconnectJitter
+				streamConfig.Debug = cfg.Channels.DingTalk.Debug
+				streamConfig.ShowThinking = cfg.Channels.DingTalk.ShowThinking
+				streamConfig.WorkspaceDir = cfg.Agents.Defaults.Workspace
+				channels.StartDingTalkStream(ctx, hub, streamConfig, "default")
+			}
+
 			// wait for signal
 			sigCh := make(chan os.Signal, 1)
 			signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)

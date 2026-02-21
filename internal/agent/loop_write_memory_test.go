@@ -9,6 +9,7 @@ import (
 	"github.com/local/picobot/internal/agent/memory"
 	"github.com/local/picobot/internal/agent/tools"
 	"github.com/local/picobot/internal/chat"
+	"github.com/local/picobot/internal/config"
 	"github.com/local/picobot/internal/providers"
 )
 
@@ -32,7 +33,8 @@ func (p *toolCallingProvider) GetDefaultModel() string { return "fake-model" }
 func TestAgentExecutesWriteMemoryToolCall(t *testing.T) {
 	b := chat.NewHub(10)
 	p := &toolCallingProvider{}
-	ag := NewAgentLoop(b, p, p.GetDefaultModel(), 5, "", nil)
+	cfg := &config.Config{} // Create empty config for test
+	ag := NewAgentLoop(b, p, p.GetDefaultModel(), 5, "", nil, cfg)
 
 	// replace memory with temp workspace and re-register write_memory tool
 	tmp := t.TempDir()

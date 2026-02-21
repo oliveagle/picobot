@@ -12,10 +12,10 @@ import (
 
 // DingTalkTool provides access to DingTalk APIs (Todo, Report, Calendar)
 type DingTalkTool struct {
-	client   *dingtalk.Client
-	unionID  string
-	userID   string
-	enabled  bool
+	client  *dingtalk.Client
+	unionID string
+	userID  string
+	enabled bool
 }
 
 // NewDingTalkTool creates a new DingTalk tool with the given credentials
@@ -32,8 +32,10 @@ func NewDingTalkTool(clientID, clientSecret, unionID, userID string) *DingTalkTo
 	}
 }
 
-func (d *DingTalkTool) Name() string        { return "dingtalk" }
-func (d *DingTalkTool) Description() string { return "Manage DingTalk todos, reports, and calendar events" }
+func (d *DingTalkTool) Name() string { return "dingtalk" }
+func (d *DingTalkTool) Description() string {
+	return "Manage DingTalk todos, reports, and calendar events"
+}
 
 func (d *DingTalkTool) Parameters() map[string]interface{} {
 	return map[string]interface{}{

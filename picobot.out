@@ -1,33 +1,117 @@
-2026/02/21 15:26:15 DingTalk tool registered
-2026/02/21 15:26:15 DingTalk config: enabled=true, clientID=ding5jz8me9fmfbumhya
-2026/02/21 15:26:15 Starting DingTalk stream...
-2026/02/21 15:26:15 Agent loop started
-2026/02/21 15:26:15 cron: scheduler started
-2026/02/21 15:26:15 [dingtalk] Starting with config: clientID=ding5jz8me9fmfbumhya, robotCode=, dmPolicy=open, groupPolicy=open
-[dingtalk-conn] 2026/02/21 15:26:15 [default] Starting DingTalk Stream client with robust connection...
-2026/02/21 15:26:15 heartbeat: started (every 1m0s)
-2026/02/21 15:26:15 [dingtalk] Connection state: CONNECTING
-[dingtalk-conn] 2026/02/21 15:26:15 [default] Connection attempt 1/10...
-2026/02/21 15:26:15 dingtalk-stream: outbound handler started
-2026/02/21 15:26:15 [dingtalk-sdk] [wire] [http] local => remote:
+2026/02/21 15:55:00 DingTalk tool registered
+2026/02/21 15:55:00 DingTalk config: enabled=true, clientID=ding5jz8me9fmfbumhya
+2026/02/21 15:55:00 Starting DingTalk stream...
+2026/02/21 15:55:00 cron: scheduler started
+2026/02/21 15:55:00 Agent loop started
+2026/02/21 15:55:00 [dingtalk] Starting with config: clientID=ding5jz8me9fmfbumhya, robotCode=, dmPolicy=open, groupPolicy=open
+[dingtalk-conn] 2026/02/21 15:55:00 [default] Starting DingTalk Stream client with robust connection...
+2026/02/21 15:55:00 [dingtalk] Connection state: CONNECTING
+[dingtalk-conn] 2026/02/21 15:55:00 [default] Connection attempt 1/10...
+2026/02/21 15:55:00 heartbeat: started (every 1m0s)
+2026/02/21 15:55:00 dingtalk-stream: outbound handler started
+2026/02/21 15:55:00 [dingtalk-sdk] [wire] [http] local => remote:
 POST /v1.0/gateway/connections/open HTTP/1.1
 Host: api.dingtalk.com
 Content-Type: application/json
 Accept: application/json
 
 {"clientId":"ding5jz8me9fmfbumhya","clientSecret":"CsBHg0EpDwZF45gaWD7naOAbvkVEwuBoLUj9D7IQK39E1GSSZ2UiZ6ALKHlbqS0Z","subscriptions":[{"type":"SYSTEM","topic":"disconnect"},{"type":"SYSTEM","topic":"ping"},{"type":"CALLBACK","topic":"/v1.0/im/bot/messages/get"},{"type":"EVENT","topic":"*"}],"ua":"dingtalk-sdk-go/v0.9.1","localIp":"192.168.1.219","extras":{"agentId":"1443416165-1014146569","corpId":"iiCrReEc7v23IJ7A14TzZOAiEiE"}}
-2026/02/21 15:26:16 [dingtalk-sdk] [wire] [http] remote => localhost:
+2026/02/21 15:55:00 [dingtalk-sdk] [wire] [http] remote => localhost:
 HTTP/2.0 200 OK
-Server: Tengine
-Date: Sat, 21 Feb 2026 07:26:16 GMT
-Access-Control-Allow-Origin: *
+Date: Sat, 21 Feb 2026 07:55:00 GMT
 Access-Control-Expose-Headers: *
-Access-Control-Allow-Headers: X-Requested-With, X-Sequence, _aop_secret, _aop_signature, x-acs-dingtalk-access-token
+X-Acs-Request-Id: C14117D7-710E-7051-B851-994BAD492D9C
+Server: Tengine
 Content-Type: application/json;charset=utf-8
-X-Acs-Request-Id: 7C68A355-9D04-7167-948E-997B760BC6DD
-X-Acs-Trace-Id: 7835b36386c0d3605cb36cc995ae3cb1
+Access-Control-Allow-Origin: *
+X-Acs-Trace-Id: 1069ca40a2fbb6473acdcdb8a49bd8e2
+Access-Control-Allow-Headers: X-Requested-With, X-Sequence, _aop_secret, _aop_signature, x-acs-dingtalk-access-token
 
-{"endpoint":"wss://wss-open-connection.dingtalk.com:443/connect","ticket":"9b9905a2-0ef6-11f1-884b-5a20030ba585"}
-2026/02/21 15:26:16 [dingtalk-sdk] connect success, sessionId=[9b9905a2-0ef6-11f1-884b-5a20030ba585]
-2026/02/21 15:26:16 [dingtalk] Connection state: CONNECTED
-[dingtalk-conn] 2026/02/21 15:26:16 [default] DingTalk Stream client connected successfully
+{"endpoint":"wss://wss-open-connection.dingtalk.com:443/connect","ticket":"9f7f1b74-0efa-11f1-884b-5a20030ba585"}
+2026/02/21 15:55:00 [dingtalk-sdk] connect success, sessionId=[9f7f1b74-0efa-11f1-884b-5a20030ba585]
+2026/02/21 15:55:00 [dingtalk] Connection state: CONNECTED
+[dingtalk-conn] 2026/02/21 15:55:00 [default] DingTalk Stream client connected successfully
+2026/02/21 15:56:00 heartbeat: sending tasks to agent
+2026/02/21 15:56:00 Processing message from heartbeat:heartbeat
+2026/02/21 15:56:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 15:57:00 heartbeat: sending tasks to agent
+2026/02/21 15:57:00 Processing message from heartbeat:heartbeat
+2026/02/21 15:57:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 15:58:00 heartbeat: sending tasks to agent
+2026/02/21 15:58:00 Processing message from heartbeat:heartbeat
+2026/02/21 15:58:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 15:59:00 heartbeat: sending tasks to agent
+2026/02/21 15:59:00 Processing message from heartbeat:heartbeat
+2026/02/21 15:59:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:00:00 heartbeat: sending tasks to agent
+2026/02/21 16:00:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:00:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:01:00 heartbeat: sending tasks to agent
+2026/02/21 16:01:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:01:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:02:00 heartbeat: sending tasks to agent
+2026/02/21 16:02:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:02:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:02:26 [dingtalk-sdk] ChatBot callback: sender=1443416165-1014146569, content=hi
+2026/02/21 16:02:26 [dingtalk] Received message: type=1, sender=Oliver, content="hi"
+2026/02/21 16:02:26 [dingtalk] Message sent to hub: sender=Oliver
+2026/02/21 16:02:26 [dingtalk-sdk] [wire] [websocket] local => remote:
+{"code":200,"headers":{"contentType":"application/json","messageId":"b5236ed_fcf_19bfa0ab353_62d6aff"},"message":"","data":"{}"}
+2026/02/21 16:02:26 Processing message from dingtalk:1443416165-1014146569
+2026/02/21 16:02:26 Sent ack to dingtalk:cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c= with hash b610f27e
+2026/02/21 16:02:26 [dingtalk] Sending response: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=, content="✅ [ID:b610f27e] Message received, thinking..."
+2026/02/21 16:02:27 [dingtalk] Token refreshed, expires in 0s
+2026/02/21 16:02:27 [dingtalk] Token refreshed, expires in 0s
+2026/02/21 16:02:27 [dingtalk] Ack sent with ID: 3b845369
+2026/02/21 16:02:27 [dingtalk] Response sent successfully: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=
+2026/02/21 16:02:29 [dingtalk] Sending response: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=, content="Hello! How can I assist you today?"
+2026/02/21 16:02:29 [dingtalk] Token refreshed, expires in 0s
+2026/02/21 16:02:29 [dingtalk] Response sent successfully: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=
+2026/02/21 16:03:00 heartbeat: sending tasks to agent
+2026/02/21 16:03:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:03:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:04:00 heartbeat: sending tasks to agent
+2026/02/21 16:04:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:04:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:04:03 [dingtalk-sdk] ChatBot callback: sender=1443416165-1014146569, content=帮我查一下上海的天气
+2026/02/21 16:04:03 [dingtalk] Received message: type=1, sender=Oliver, content="帮我查一下上海的天气"
+2026/02/21 16:04:03 [dingtalk] Message sent to hub: sender=Oliver
+2026/02/21 16:04:03 [dingtalk-sdk] [wire] [websocket] local => remote:
+{"code":200,"headers":{"contentType":"application/json","messageId":"b516027_1c02_19c07b32e53_57f1df2"},"message":"","data":"{}"}
+2026/02/21 16:04:03 Processing message from dingtalk:1443416165-1014146569
+2026/02/21 16:04:03 Sent ack to dingtalk:cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c= with hash da633a6f
+2026/02/21 16:04:03 [dingtalk] Sending response: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=, content="✅ [ID:da633a6f] Message received, thinking..."
+2026/02/21 16:04:03 [dingtalk] Token refreshed, expires in 0s
+2026/02/21 16:04:03 [dingtalk] Token refreshed, expires in 0s
+2026/02/21 16:04:03 [dingtalk] Ack sent with ID: 3d5ce984
+2026/02/21 16:04:03 [dingtalk] Response sent successfully: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=
+2026/02/21 16:04:08 [dingtalk] Sending response: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=, content="我目前没有直接查询天气的工具，但你可以使用天气服务网站或App（如中国天气网、墨迹天气、或手机自带的天气应用）来获取上海的实时天气信息。如果你需要，我可以帮你查找其他相关信息！"
+2026/02/21 16:04:08 [dingtalk] Token refreshed, expires in 0s
+2026/02/21 16:04:08 [dingtalk] Response sent successfully: chatID=cid3uROB9zL6XtOXFgh+MddCTmgt6OkAxRraOQgQeW2F/c=
+2026/02/21 16:05:00 heartbeat: sending tasks to agent
+2026/02/21 16:05:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:05:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:06:00 heartbeat: sending tasks to agent
+2026/02/21 16:06:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:06:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:07:00 heartbeat: sending tasks to agent
+2026/02/21 16:07:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:07:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:08:00 heartbeat: sending tasks to agent
+2026/02/21 16:08:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:08:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:09:00 heartbeat: sending tasks to agent
+2026/02/21 16:09:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:09:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:10:00 heartbeat: sending tasks to agent
+2026/02/21 16:10:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:10:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:11:00 heartbeat: sending tasks to agent
+2026/02/21 16:11:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:11:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:12:00 heartbeat: sending tasks to agent
+2026/02/21 16:12:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:12:00 [heartbeat] message received, skipping LLM processing
+2026/02/21 16:13:00 heartbeat: sending tasks to agent
+2026/02/21 16:13:00 Processing message from heartbeat:heartbeat
+2026/02/21 16:13:00 [heartbeat] message received, skipping LLM processing

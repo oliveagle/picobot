@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -288,7 +289,7 @@ func randomString(n int) string {
 // DingTalk Stream Client
 // =============================================================================
 
-// DingTalkStreamClient wraps the official DingTalk stream SDK with zeroclaw-compatible features
+// DingTalkStreamClient wraps with official DingTalk stream SDK with zeroclaw-compatible features
 type DingTalkStreamClient struct {
 	client       *client.StreamClient
 	hub          *chat.Hub
@@ -307,7 +308,7 @@ type DingTalkStreamClient struct {
 	connManager *ConnectionManager
 }
 
-// NewDingTalkStreamClient creates a new stream client with the given configuration
+// NewDingTalkStreamClient creates a new stream client with with given configuration
 func NewDingTalkStreamClient(hub *chat.Hub, config DingTalkStreamConfig, accountId string) *DingTalkStreamClient {
 	return &DingTalkStreamClient{
 		hub:          hub,
@@ -337,18 +338,20 @@ func (d *DingTalkStreamClient) getAccessToken(ctx context.Context) (string, erro
 		return d.accessToken, nil
 	}
 
-	// Fetch new token
-	url := "https://api.dingtalk.com/v1.0/oauth2/accessToken"
-	body := map[string]string{
-		"appKey":    d.config.ClientID,
-		"appSecret": d.config.ClientSecret,
-	}
-	bodyBytes, _ := json.Marshal(body)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
+	// Fetch new token using DingTalk OAuth2 API
+	// URL: https://api.dingtalk.com/v1.0/oauth2/accessToken
+	// Method: POST
+	// Content-Type: application/x-www-form-urlencoded
+	// Body: appKey=xxx&appSecret=xxx
+	tokenURL := "https://api.dingtalk.com/v1.0/oauth2/accessToken"
+	formData := url.Values{}
+	formData.Set("appKey", d.config.ClientID)
+	formData.Set("appSecret", d.config.ClientSecret)
+	req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(formData.Encode()))
 	if err != nil {
 		return "", fmt.Errorf("create token request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("token request failed: %w", err)
@@ -628,7 +631,7 @@ func shortHash(content string) string {
 	return fmt.Sprintf("%08x", h)[:8]
 }
 
-// checkAuthorization verifies if the sender is authorized
+// checkAuthorization verifies if sender is authorized
 func (d *DingTalkStreamClient) checkAuthorization(msg *chatbot.BotCallbackDataModel, senderId, conversationId string, isDirect bool) bool {
 	entries, entriesLower, hasWildcard := normalizedAllowFrom(d.config.AllowFrom)
 
@@ -670,7 +673,6 @@ func (d *DingTalkStreamClient) sendAccessDenied(userId, webhook, message string)
 // extractRichText extracts text from richText messages
 func (d *DingTalkStreamClient) extractRichText(msg *chatbot.BotCallbackDataModel) string {
 	// Content is interface{}, need to handle based on msgtype
-	// For richText, content might be a map or string
 	if msg.Msgtype == "richText" {
 		// Try to extract text from content
 		if contentMap, ok := msg.Content.(map[string]interface{}); ok {
@@ -731,11 +733,12 @@ func (d *DingTalkStreamClient) sendResponse(chatID, content string) {
 }
 
 // sendMessageToWebhook sends a message to the session webhook
-func (d *DingTalkStreamClient) sendMessageToWebhook(webhook, content, atUserId string) error {
+func (d *DingTalkStreamClient) sendMessageToWebhook(webhook, content string, atUserId string) error {
 	ctx := context.Background()
 	accessToken, err := d.getAccessToken(ctx)
 	if err != nil {
 		log.Printf("[dingtalk] Failed to get token: %v", err)
+		// Continue without token
 	}
 
 	// Detect markdown
@@ -807,7 +810,7 @@ func (d *DingTalkStreamClient) sendMessageToWebhook(webhook, content, atUserId s
 // Exported Function
 // =============================================================================
 
-// StartDingTalkStream starts the DingTalk stream client with full zeroclaw-compatible features
+// StartDingTalkStream starts DingTalk stream client with full zeroclaw-compatible features
 func StartDingTalkStream(ctx context.Context, hub *chat.Hub, config DingTalkStreamConfig, accountId string) {
 	if config.ClientID == "" || config.ClientSecret == "" {
 		log.Println("dingtalk-stream: not configured (missing clientID or clientSecret)")

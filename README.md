@@ -94,7 +94,7 @@ Notes: Channel refers to communication channels (e.g., Telegram, WhatsApp, etc.)
 
 ## Features
 
-### 11 Built-in Tools
+### 13 Built-in Tools
 
 The agent can take real actions — not just chat:
 
@@ -104,6 +104,7 @@ The agent can take real actions — not just chat:
 | `exec` | Run shell commands |
 | `web` | Fetch web pages and APIs |
 | `message` | Send messages to channels |
+| `dingtalk` | Send messages to DingTalk, manage todos/calendar |
 | `spawn` | Launch background subagents |
 | `cron` | Schedule recurring tasks |
 | `write_memory` | Persist information across sessions |
@@ -111,6 +112,7 @@ The agent can take real actions — not just chat:
 | `list_skills` | List available skills |
 | `read_skill` | Read a skill's content |
 | `delete_skill` | Remove a skill |
+| `claude_code` | Execute Claude Code via ACP protocol |
 
 ### Persistent Memory
 
@@ -146,6 +148,38 @@ Chat with your agent from your phone. Set up in 2 minutes:
 
 See [HOW_TO_START.md](HOW_TO_START.md) for a detailed BotFather walkthrough.
 
+### DingTalk Integration
+
+Chat with your agent from DingTalk. Enterprise robot support with:
+
+- **Stream Mode** — Real-time event streaming with robust reconnection
+- **Message Acknowledgment** — Immediate "thinking..." feedback
+- **Authorization** — Open, pairing, or allowlist policies for DM and groups
+- **Media Support** — Download and process images, audio, video, files
+- **Rich Text** — Full formatting support for DingTalk messages
+
+Configuration options:
+```json
+{
+  "channels": {
+    "dingtalk": {
+      "enabled": true,
+      "clientId": "your-app-key",
+      "clientSecret": "your-app-secret",
+      "robotCode": "your-robot-code",
+      "corpId": "your-corp-id",
+      "agentId": "your-agent-id",
+      "dmPolicy": "open",           // open, pairing, or allowlist
+      "groupPolicy": "open",        // open or allowlist
+      "allowFrom": [],             // allowed sender/group IDs
+      "messageType": "markdown",    // markdown or card
+      "debug": false,
+      "showThinking": true
+    }
+  }
+}
+```
+
 ### Heartbeat
 
 A configurable periodic check (default: 60s) that reads `HEARTBEAT.md` for scheduled tasks — like a personal cron with natural language.
@@ -175,6 +209,24 @@ Picobot uses a single JSON config at `~/.picobot/config.json`:
       "enabled": true,
       "token": "YOUR_BOT_TOKEN",
       "allowFrom": ["YOUR_USER_ID"]
+    },
+    "dingtalk": {
+      "enabled": true,
+      "clientId": "YOUR_APP_KEY",
+      "clientSecret": "YOUR_APP_SECRET",
+      "robotCode": "YOUR_ROBOT_CODE",
+      "corpId": "YOUR_CORP_ID",
+      "agentId": "YOUR_AGENT_ID",
+      "dmPolicy": "open",
+      "groupPolicy": "open",
+      "allowFrom": [],
+      "messageType": "markdown",
+      "maxConnectionAttempts": 10,
+      "initialReconnectDelay": 1000,
+      "maxReconnectDelay": 60000,
+      "reconnectJitter": 0.3,
+      "debug": false,
+      "showThinking": true
     }
   }
 }
@@ -231,10 +283,12 @@ cmd/picobot/          CLI entry point
 embeds/               Embedded assets (sample skills)
 internal/
   agent/              Agent loop, context, tools, skills
+  acp/                Agent Client Protocol client
   chat/               Chat message hub
-  channels/           Telegram (more coming)
+  channels/           Telegram, DingTalk
   config/             Config schema, loader, onboarding
   cron/               Cron scheduler
+  dingtalk/            DingTalk API helpers
   heartbeat/          Periodic task checker
   memory/             Memory read/write/rank
   providers/          OpenAI-compatible provider
@@ -245,9 +299,11 @@ docker/               Dockerfile, compose, entrypoint
 ## Roadmap
 
 - [x] Add Telegram support
+- [x] Add DingTalk support (Stream + Webhook)
 - [ ] Add WhatsApp support
 - [ ] Add Discord support
 - [x] AI agent with skill creation capability
+- [x] Add ACP (Agent Client Protocol) tool
 - [ ] Integrate additional useful default skills
 - [ ] Add more tools (email, file processing, etc.)
 
